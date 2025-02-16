@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agriculture AI - Crop Yield & Weed Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fb;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 70%;
+            max-width: 800px;
+            text-align: center;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        h2 {
+            margin-top: 30px;
+            color: #333;
+        }
+        input[type="number"], input[type="file"], button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            border: none;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f4e7;
+            border-radius: 5px;
+            color: #4CAF50;
+            font-weight: bold;
+            display: none;
+        }
+        .error {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ffcccb;
+            border-radius: 5px;
+            color: #d32f2f;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agriculture AI</h1>
+        <p>Crop Yield Prediction & Weed Detection</p>
+
+        <!-- Crop Yield Prediction Form -->
+        <div>
+            <h2>Crop Yield Prediction</h2>
+            <form id="yieldForm">
+                <input type="number" id="temperature" placeholder="Temperature (°C)" required>
+                <input type="number" id="humidity" placeholder="Humidity (%)" required>
+                <input type="number" id="rainfall" placeholder="Rainfall (mm)" required>
+                <button type="submit">Predict Yield</button>
+            </form>
+            <div id="yieldResult" class="result"></div>
+            <div id="yieldError" class="error"></div>
+        </div>
+
+        <!-- Weed Detection Form -->
+        <div>
+            <h2>Weed Detection</h2>
+            <form id="weedForm" enctype="multipart/form-data">
+                <input type="file" id="imageInput" name="image" required />
+                <button type="submit">Detect Weed</button>
+            </form>
+            <div id="weedResult" class="result"></div>
+            <div id="weedError" class="error"></div>
+        </div>
+    </div>
+
+    <script>
+        // Crop Yield Prediction
+        document.getElementById('yieldForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const temperature = document.getElementById('temperature').value;
+            const humidity = document.getElementById('humidity').value;
+            const rainfall = document.getElementById('rainfall').value;
+
+            const response = await fetch('http://127.0.0.1:5000/predict_yield', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    temperature: parseFloat(temperature),
+                    humidity: parseFloat(humidity),
+                    rainfall: parseFloat(rainfall),
+                }),
+            });
+
+            const result = await response.json();
+            if (response.ok && result.predicted_yield) {
+                document.getElementById('yieldResult').style.display = 'block';
+                document.getElementById('yieldResult').textContent = `Predicted Crop Yield: ${result.predicted_yield} tons/ha`;
+                document.getElementById('yieldError').style.display = 'none';
+            } else {
+                document.getElementById('yieldResult').style.display = 'none';
+                document.getElementById('yieldError').style.display = 'block';
+                document.getElementById('yieldError').textContent = result.error || 'Error in prediction.';
+            }
+        });
+
+        // Weed Detection
+        document.getElementById('weedForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('image', document.getElementById('imageInput').files[0]);
+
+            const response = await fetch('http://127.0.0.1:5000/detect_weed', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (response.ok && typeof result.weed_detected === 'boolean') {
+                document.getElementById('weedResult').style.display = 'block';
+                document.getElementById('weedResult').textContent = result.weed_detected ? 'Weed Detected!' : 'No Weed Detected';
+                document.getElementById('weedError').style.display = 'none';
+            } else {
+                document.getElementById('weedResult').style.display = 'none';
+                document.getElementById('weedError').style.display = 'block';
+                document.getElementById('weedError').textContent = result.error || 'Error in weed detection.';
+            }
+        });
+    </script>
+</body>
+</html>
